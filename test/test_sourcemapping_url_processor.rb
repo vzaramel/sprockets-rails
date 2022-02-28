@@ -46,4 +46,22 @@ class TestSourceMappingUrlProcessor < Minitest::Test
     output = Sprockets::Rails::SourcemappingUrlProcessor.call(input)
     assert_equal({ data: "var mapped;\n" }, output)
   end
+
+
+  def test_successful
+    @env.context_class.class_eval do
+      def resolve(path, **kargs)
+        "/assets/builds/subdir/mapped.js.map"
+      end
+
+      def asset_path(path, options = {})
+        "/assets/subdir/mapped-HEXGOESHERE.js.map"
+      end
+    end
+
+    input = { environment: @env, data: "var mapped;\n//# sourceMappingURL=subdir/mapped.js.map", name: 'subdir/mapped', filename: 'subdir/mapped.js', metadata: {} }
+    puts input
+    output = Sprockets::Rails::SourcemappingUrlProcessor.call(input)
+    assert_equal({ data: "var mapped;\n//# sourceMappingURL=/assets/subdir/mapped-HEXGOESHERE.js.map\n//!\n" }, output)
+  end
 end
